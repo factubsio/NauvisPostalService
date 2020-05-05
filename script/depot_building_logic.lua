@@ -93,6 +93,7 @@ function Van:new(entity, owner, spawn_offset)
     }
     local van = setmetatable(
         {
+            home = bay_position(owner),
             owner = owner,
             entity = van_entity,
             inventory = tubs.Inventory:new(),
@@ -126,7 +127,7 @@ function Van:continue()
     loc = {0,0}
 
     if dest == nil then
-        loc = bay_position(self.owner)
+        loc = self.home
         self.state = "go-home"
     else
         loc = bay_position(dest.target)
@@ -448,6 +449,10 @@ function DepotDock:die()
             self:disconnect("left", true)
         end
     end
+
+    if self.van.state == "idle" then
+        self.van.entity.destroy()
+    end
 end
 
 local on_created_entity = function(event)
@@ -684,6 +689,11 @@ local on_ai_command_completed = function(event)
     elseif van.state == "go-home" then
         van.delivery_queue = {}
         van:sleep()
+
+        if not van.owner.valid then
+            van.entity.destroy()
+            -- van:die()
+        end
     end
 end
 
