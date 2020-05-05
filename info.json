@@ -1,0 +1,12 @@
+
+{
+    "name": "NauvisPostalService",
+    "version": "0.1.0",
+    "title": "Nauvis Postal Service",
+    "author": "mcw",
+    "contact": "",
+    "homepage": "",
+    "factorio_version": "0.18",
+    "dependencies": ["base >= 0.18"],
+    "description": "Last mile logistics to work with transport drone style playthroughs"
+}
