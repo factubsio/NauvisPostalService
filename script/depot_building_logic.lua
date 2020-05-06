@@ -120,6 +120,10 @@ function Van:sleep()
     script_data.vans_busy[self.id] = nil
 end
 
+function Van:die()
+    self.entity.destroy()
+end
+
 function Van:continue()
 
     self.current_target,dest = next(self.delivery_queue, self.current_target)
@@ -244,10 +248,10 @@ function Depot:die()
 
 
     if neighbours.left_dock then
-        neighbours.left_dock:disconnect("left")
+        neighbours.left_dock:disconnect("right")
     end
     if neighbours.right_dock then
-        neighbours.right_dock:disconnect("right")
+        neighbours.right_dock:disconnect("left")
     end
 
     rendering.destroy(self.range_indicator)
@@ -324,14 +328,45 @@ function DepotDock:new(entity)
             links = {},
             docks = {},
             id = entity.unit_number,
+            warning_no_depot = nil,
         },
         DepotDock_mt)
 
     script_data.depot_docks[entity.unit_number] = dock
 
+    dock.warning_no_depot = rendering.draw_animation{
+        animation = "tubs-nps-warning-no-depot",
+        surface = entity.surface,
+        target = entity,
+        x_scale = .4,
+        y_scale = .4,
+    }
+
+    dock.hint_right = rendering.draw_sprite{
+        sprite = "utility/indication_arrow",
+        surface = entity.surface,
+        x_scale = .7,
+        y_scale = .7,
+        target = entity,
+        target_offset = {.5, 0},
+        orientation = .25,
+        visible = false,
+        only_in_alt_mode = true,
+    }
+    dock.hint_left = rendering.draw_sprite{
+        sprite = "utility/indication_arrow",
+        surface = entity.surface,
+        x_scale = .7,
+        y_scale = .7,
+        target = entity,
+        target_offset = {-.5, 0},
+        orientation = .75,
+        visible = false,
+        only_in_alt_mode = true,
+    }
+
     dock:validate({left = true, right = true})
 
-    
     dock.van = Van:new(entity, dock, 0)
 
     return dock
@@ -345,15 +380,20 @@ function DepotDock:y()
 end
 
 function DepotDock:make_link(dir)
+
+    if dir == "left" then
+        rendering.set_visible(self.hint_left, true)
+    else
+        rendering.set_visible(self.hint_right, true)
+    end
+
     if self.links[dir] then return end
 
     local entity = self.entity
-    local offset = dir == "left" and -0.75 or .75
-    local link = entity.surface.create_entity{
-        name = "tubs-ups-loading-dock-link",
-        position = { self:x() + offset, self:y() },
-        force = entity.force,
-        player = entity.last_user
+    local link = rendering.draw_sprite{
+        sprite = "tubs-nps-garage-link-" .. dir,
+        surface = entity.surface,
+        target = entity,
     }
     self.links[dir] = link
 end
@@ -366,61 +406,93 @@ function DepotDock:validate(dir_mask, player)
     if self.depot then self.depot.docks[self.id] = nil end
     self.depot = nil
 
+    local link_visible = {false,false}
+
     self.docks.left = n.left_dock
     self.docks.right = n.right_dock
 
     if n.left_depot then
-        if self.depot and self.depot ~= n.left_depot then
-            self.entity.surface.create_entity{name = "flying-text", position = self.entity.position, text = "Can't connect a dock to two depots"}
+        if self.depot then
+            if  self.depot ~= n.left_depot then
+                self.entity.surface.create_entity{name = "flying-text", position = self.entity.position, text = "Can't connect a dock to two depots"}
+            end
         else
             self.depot = n.left_depot
             self.depot.docks[self.id] = self
-            self:make_link("left")
         end
     end
 
     if n.right_depot then
-        if self.depot and self.depot ~= n.right_depot then
-            self.entity.surface.create_entity{name = "flying-text", position = self.entity.position, text = "Can't connect a dock to two depots"}
+        if self.depot then
+            if  self.depot ~= n.right_depot then
+                self.entity.surface.create_entity{name = "flying-text", position = self.entity.position, text = "Can't connect a dock to two depots"}
+            end
         else
             self.depot = n.right_depot
             self.depot.docks[self.id] = self
-            self:make_link("right")
         end
     end
+
+    self:refresh_hints()
 
     if n.left_dock and dir_mask.left then n.left_dock:validate({left = true}, player) end
     if n.right_dock and dir_mask.right then n.right_dock:validate({right = true}, player) end
 
+
+end
+
+function DepotDock:refresh_hints()
+    local have_depot = self.depot and self.depot.entity.valid
+    if have_depot then
+        if self.depot.entity.position.x < self.entity.position.x then
+            self.depot_dir = "left"
+        else
+            self.depot_dir = "right"
+        end
+
+    end
+
+    rendering.set_visible(self.hint_left, have_depot and self.depot_dir == "left")
+    rendering.set_visible(self.hint_right, have_depot and self.depot_dir == "right")
+
+    rendering.set_visible(self.warning_no_depot, have_depot ~= true)
 end
 
 function DepotDock:break_links()
     if self.links.left then
-        self.links.left.destroy()
+        rendering.destroy(self.links.left)
         self.links.left = nil
     end
     if self.links.right then
-        self.links.right.destroy()
+        rendering.destroy(self.links.right)
         self.links.right = nil
     end
+
     if self.depot then self.depot.docks[self.id] = nil end
     self.depot = nil
+
+    self:refresh_hints()
 end
 
-function DepotDock:disconnect(dir, destroy)
+function DepotDock:disconnect(depot_dir, destroy)
     if self.docks.left then self.docks.left.docks.right = nil end
     if self.docks.right then self.docks.right.docks.left = nil end
 
     self:break_links()
 
-    if dir == "left" and self.docks.right and self.docks.right.links.left then
-        self.docks.right.links.left.destroy()
+    if depot_dir == "left" and self.docks.right and self.docks.right.links.left then
+        rendering.destroy(self.docks.right.links.left)
         self.docks.right.links.left = nil
-    elseif dir == "right" and self.docks.left and self.docks.left.links.right then
-        self.docks.left.links.right.destroy()
-        self.docks.right.links.right = nil
+    elseif depot_dir == "right" and self.docks.left and self.docks.left.links.right then
+        rendering.destroy(self.docks.left.links.right)
+        self.docks.left.links.right = nil
     end
 
+    local opposite = function(dir)
+        if dir == "left" then return "right" else return "left" end
+    end
+
+    local dir = opposite(depot_dir)
     local n = self.docks[dir]
 
     local last = nil
@@ -439,19 +511,17 @@ function DepotDock:disconnect(dir, destroy)
     if last then
         last:validate({left = true, right = true})
     end
+
+    -- if self.docks[depot_dir]
 end
 
 function DepotDock:die()
     if self.depot then
-        if self.depot.entity.position.x < self:x() then
-            self:disconnect("right", true)
-        else
-            self:disconnect("left", true)
-        end
+        self:disconnect(self.depot_dir, true)
     end
 
     if self.van.state == "idle" then
-        self.van.entity.destroy()
+        self.van:die()
     end
 end
 
@@ -690,9 +760,8 @@ local on_ai_command_completed = function(event)
         van.delivery_queue = {}
         van:sleep()
 
-        if not van.owner.valid then
-            van.entity.destroy()
-            -- van:die()
+        if not van.owner.entity.valid then
+            van:die()
         end
     end
 end

@@ -80,24 +80,38 @@ end
 
 van.run_animation =
 {
-    layers =
-    {
+    priority = "low",
+    width = 192,
+    height = 192,
+    scale = 0.4,
+    frame_count = 5,
+    direction_count = 36,
+    shift = {0,0},
+    animation_speed = 8,
+    max_advance = 0.2,
+    stripes = {
         {
-            priority = "low",
-            width = 128,
-            height = 128,
-            scale = 0.4,
-            frame_count = 5,
-            direction_count = 36,
-            line_length = 15,
-            lines_per_file = 12,
-            shift = {0,0},
-            animation_speed = 8,
-            max_advance = 0.2,
-            filename = util.path("data/entities/truck_mk1_anim.png")
-
-        }
+            filename = util.path("data/entities/truck_mk1_cargo-0.png"),
+            width_in_frames = 5,
+            height_in_frames = 10,
+        },
+        {
+            filename = util.path("data/entities/truck_mk1_cargo-1.png"),
+            width_in_frames = 5,
+            height_in_frames = 10,
+        },
+        {
+            filename = util.path("data/entities/truck_mk1_cargo-2.png"),
+            width_in_frames = 5,
+            height_in_frames = 10,
+        },
+        {
+            filename = util.path("data/entities/truck_mk1_cargo-3.png"),
+            width_in_frames = 5,
+            height_in_frames = 6,
+        },
     }
+
 }
 van.distance_per_frame = 4
 
