@@ -1,4 +1,3 @@
-local lib = {}
 
 local tubs = require("libtubs")
 
@@ -46,8 +45,8 @@ local get_depot = function(entity)
     return script_data.depots[entity.unit_number]
 end
 
-local bay_position = function(data)
-    return {data.entity.position.x, data.entity.position.y + 1}
+local bay_position = function(data, offset)
+    return {data.entity.position.x, data.entity.position.y + (offset or 1)}
 end
 
 local get_depot_neighbours = function(entity)
@@ -93,7 +92,7 @@ function Van:new(entity, owner, spawn_offset)
     }
     local van = setmetatable(
         {
-            home = bay_position(owner),
+            home = bay_position(owner, 2),
             owner = owner,
             entity = van_entity,
             inventory = tubs.Inventory:new(),
@@ -116,6 +115,34 @@ end
 
 function Van:sleep()
     self:stop()
+
+    if self.inventory:count() > 0 then
+        local spill = nil
+        local depot = self.owner.depot
+        if depot and depot.entity.valid then
+            spill = tubs.Inventory:new()
+            local insert = depot.entity.get_output_inventory().insert
+            for name,amount in pairs(self.inventory) do
+                local amount_inserted = insert({name = name, count = amount})
+                if amount_inserted < amount then
+                    local to_spill = amount - amount_inserted
+                    spill:emplace(name, to_spill)
+                end
+            end
+        else
+            spill = self.inventory
+        end
+
+        local do_spill = self.entity.surface.spill_item_stack
+
+        for name,amount in pairs(spill) do
+            do_spill(self.entity.position, {name=name, count=amount})
+        end
+
+        self.inventory:clear()
+    end
+
+
     self.state = "idle"
     script_data.vans_busy[self.id] = nil
 end
@@ -130,8 +157,11 @@ function Van:continue()
 
     loc = {0,0}
 
+    local radius = .75
+
     if dest == nil then
         loc = self.home
+        radius = .5
         self.state = "go-home"
     else
         loc = bay_position(dest.target)
@@ -141,7 +171,7 @@ function Van:continue()
     self.entity.set_command{
         type = defines.command.go_to_location,
         destination = loc,
-        radius = 0.75
+        radius = radius,
     }
 
 end
@@ -149,8 +179,8 @@ end
 function Van:service_dock()
     manifest = self.delivery_queue[self.current_target]
 
-    self.inventory:remove_inventory(manifest.drop_off)
-    manifest.target:accept_delivery(manifest.drop_off)
+    local removed = manifest.target:accept_delivery(manifest.drop_off)
+    self.inventory:remove_inventory(removed)
 end
 
 function Van:assign(stuff, target)
@@ -197,6 +227,23 @@ function Depot:new(entity)
         draw_on_ground = false,
         surface = entity.surface,
         visible = overlay.visible,
+    }
+
+    depot.radar_anim = rendering.draw_animation{
+        animation = "tubs-nps-depot-radar",
+        x_scale = .4,
+        y_scale = .4,
+        target = entity,
+        surface = entity.surface,
+    }
+
+    depot.shadow_anim = rendering.draw_animation{
+        animation = "tubs-nps-depot-shadow",
+        x_scale = .4,
+        y_scale = .4,
+        target = entity,
+        surface = entity.surface,
+        render_layer = 92,
     }
 
     script_data.depots[entity.unit_number] = depot
@@ -303,9 +350,15 @@ end
 
 function LoadingDock:accept_delivery(delivery)
     self.deliveries:remove_inventory(delivery)
+    local inserted = tubs.Inventory:new()
+    local insert = self.entity.get_output_inventory().insert
     for name,amount in pairs(delivery) do
-        self.entity.get_output_inventory().insert({name = name, count = amount})
+        local amount_inserted = insert({name = name, count = amount})
+        if amount_inserted > 0 then
+            inserted:emplace(name, amount_inserted)
+        end
     end
+    return inserted
 end
 
 function LoadingDock:die()
@@ -676,6 +729,16 @@ local on_tick = function(event)
             end)
             ingredients:validate()
 
+            local verify_space = dock.entity.get_output_inventory().get_insertable_count
+            local current_inventory = depot.entity.get_output_inventory().get_contents()
+
+            for name,_ in pairs(ingredients) do
+                if verify_space(name) == 0 or current_inventory[name] == nil then
+                    ingredients[name] = nil
+                end
+            end
+
+
             if ingredients:count() == 0 then
                 return 1
             end
@@ -749,6 +812,7 @@ local on_ai_command_completed = function(event)
 
     if event.result ~= defines.behavior_result.success then
         -- HELP
+        game.message("van failed path finding and is now lost and alone")
         return
     end
 
@@ -857,6 +921,7 @@ local on_gui_opened = function(event)
     end
 end
 
+local lib = {}
 
 lib.events =
 {

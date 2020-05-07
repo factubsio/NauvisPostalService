@@ -139,7 +139,37 @@ warning_no_depot.size = 64
 warning_no_depot.frame_count = 2
 warning_no_depot.animation_speed = 0.03
 
+local depot_radar_anim = {}
+depot_radar_anim.type = "animation"
+depot_radar_anim.name = "tubs-nps-depot-radar"
+depot_radar_anim.stripes = {
+        {
+            filename = util.path("data/entities/depot_radar.png"),
+            width_in_frames = 8,
+            height_in_frames = 5,
+        },
+}
+depot_radar_anim.size = 256
+depot_radar_anim.frame_count = 40
+depot_radar_anim.animation_speed = .5
+depot_radar_anim.run_mode = "forward-then-backward"
 
+
+local depot_shadow_anim = {}
+depot_shadow_anim.type = "animation"
+depot_shadow_anim.name = "tubs-nps-depot-shadow"
+depot_shadow_anim.stripes = {
+        {
+            filename = util.path("data/entities/depot_shadow.png"),
+            width_in_frames = 8,
+            height_in_frames = 5,
+        },
+}
+depot_shadow_anim.size = 256
+depot_shadow_anim.frame_count = 40
+depot_shadow_anim.animation_speed = .5
+depot_shadow_anim.run_mode = "forward-then-backward"
+    
 
 local mkitem = function(entity)
     return
@@ -190,3 +220,5 @@ data:extend(mkitem(garage))
 data:extend{garage_link_left}
 data:extend{garage_link_right}
 data:extend{warning_no_depot}
+data:extend{depot_radar_anim}
+data:extend{depot_shadow_anim}
