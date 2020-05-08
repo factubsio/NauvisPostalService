@@ -58,8 +58,9 @@ function lib.Inventory:from_container(container)
   return inv
 end
 
-function lib.Inventory:from_recipe(recipe)
+function lib.Inventory:from_recipe(recipe, stack_limit)
   local inv = lib.Inventory:new()
+  inv:set_stack_limit(stack_limit or 8)
 
   for _,ingredient in pairs(recipe.ingredients) do
       local name = ingredient.name
@@ -214,6 +215,19 @@ lib.get_item_icon_and_locale = function(name)
 
 end
 
+lib.get_frame = function(tick, anim_def)
+  return math.floor((tick * anim_def.speed) % anim_def.frames)
+end
+
+lib.set_frame = function(tick, frame, anim_def, anim)
+  rendering.set_animation_speed(anim, anim_def.speed)
+  if anim_def.speed == 0 then
+    rendering.set_animation_offset(anim, frame)
+  else
+    local current_frame = lib.get_frame(tick, anim_def)
+    rendering.set_animation_offset(anim, frame - current_frame)
+  end
+end
 
 
 return lib

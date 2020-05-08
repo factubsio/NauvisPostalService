@@ -18,7 +18,8 @@ local script_data =
   depots = {},
   kill_gui = nil,
   dock_gui = {},
-  vans_busy = {}
+  vans_busy = {},
+  scheduled = {},
 }
 local overlay =
 {
@@ -82,30 +83,56 @@ end
 Van = {}
 Van_mt = { __index = Van }
 
+function Van:regenerate_entity(pos)
+
+    local entity_name = nil
+
+    if self.inventory:count() == 0 then
+        entity_name = "tubs-ups-delivery-van"
+    else
+        entity_name = "tubs-nps-delivery-van-loaded"
+    end
+
+    if self.entity_name ~= entity_name then
+        if self.entity then self.entity.destroy() end
+
+        self.entity = self.dummy.surface.create_entity{
+            name = entity_name,
+            position = pos,
+            force = self.dummy.force,
+            player = self.player,
+        }
+        self.entity_name = entity_name
+    else
+        self.entity.teleport(pos)
+    end
+    self:stop()
+end
 
 function Van:new(entity, owner, spawn_offset)
-    local van_entity = entity.surface.create_entity{
-        name = "tubs-ups-delivery-van",
-        position = { entity.position.x + spawn_offset, entity.position.y + 2 },
+    local dummy = entity.surface.create_entity{
+        name = "tubs-nps-dummy",
+        position = entity.position,
         force = entity.force,
-        player = entity.last_user
+        player = entity.last_user,
+
     }
     local van = setmetatable(
         {
+            dummy = dummy,
             home = bay_position(owner, 2),
             owner = owner,
-            entity = van_entity,
             inventory = tubs.Inventory:new(),
             state = "idle",
             delivery_queue = {},
             current_target = nil,
-            id = van_entity.unit_number,
+            id = dummy.unit_number,
         },
         Van_mt
     )
-    van.inventory:set_stack_limit(3)
-    van:stop()
 
+    van:regenerate_entity{entity.position.x, entity.position.y + 1}
+    van.inventory:set_stack_limit(3)
     return van
 end
 
@@ -142,7 +169,7 @@ function Van:sleep()
         self.inventory:clear()
     end
 
-
+    self:regenerate_entity(self.entity.position)
     self.state = "idle"
     script_data.vans_busy[self.id] = nil
 end
@@ -161,30 +188,41 @@ function Van:continue()
 
     if dest == nil then
         loc = self.home
-        radius = .5
+        radius = .3
         self.state = "go-home"
     else
         loc = bay_position(dest.target)
         self.state = "working"
+        radius = .3
     end
-    
+
+    script_data.vans_busy[self.entity.unit_number] = self
+
     self.entity.set_command{
         type = defines.command.go_to_location,
         destination = loc,
         radius = radius,
+        pathfind_flags = { prefer_straight_paths = true, cache = true, no_break = true }
     }
 
 end
 
 function Van:service_dock()
-    manifest = self.delivery_queue[self.current_target]
+    local manifest = self.delivery_queue[self.current_target]
 
-    local removed = manifest.target:accept_delivery(manifest.drop_off)
+    local pos = self.entity.position
+    local dock_pos = manifest.target.entity.position
+
+    script_data.vans_busy[self.entity.unit_number] = nil
+    -- script_data.vans_docking[self.dummy.unit_number] = self
+
+    local removed = manifest.target:accept_delivery(self, manifest.drop_off)
     self.inventory:remove_inventory(removed)
+
+    self:regenerate_entity{dock_pos.x, dock_pos.y + .5}
 end
 
 function Van:assign(stuff, target)
-    self.inventory:add_inventory(stuff)
 
     local slot = self.delivery_queue[target:id()]
     if slot then
@@ -194,8 +232,14 @@ function Van:assign(stuff, target)
     end
 
     target.deliveries:add_inventory(stuff)
+    self.inventory:add_inventory(stuff)
 
-    self.state = "ready"
+    if self.state ~= "ready" then
+        local pos = self.owner.entity.position
+        self:regenerate_entity{pos.x, pos.y + .6}
+        self.state = "ready"
+    end
+
 end
 
 Depot = {}
@@ -307,6 +351,20 @@ end
 LoadingDock = {}
 LoadingDock_mt = { __index = LoadingDock }
 
+function LoadingDock:animate(speed)
+    if not self.anim then
+        self.anim = rendering.draw_animation{
+            animation = "tubs-nps-dock-animation",
+            surface = self.entity.surface,
+            target = self.entity,
+            x_scale = .4,
+            y_scale = .4,
+        }
+    end
+    tubs.set_frame(game.tick, 0, {frames=31, speed=speed}, self.anim)
+    game.print("starting (dock) anim at: " .. rendering.get_animation_offset(self.anim))
+end
+
 function LoadingDock:new(entity)
     local dock = setmetatable(
         {
@@ -318,6 +376,7 @@ function LoadingDock:new(entity)
         LoadingDock_mt)
 
     dock.deliveries:set_stack_limit(16)
+    dock:animate(0)
 
     local providers = entity.surface.find_entities_filtered{position = entity.position, radius = service_radius, name = {"tubs-ups-depot"}}
     for _,depot_entity in pairs(providers) do
@@ -348,7 +407,23 @@ function LoadingDock:y()
     return self.entity.position.y
 end
 
-function LoadingDock:accept_delivery(delivery)
+local schedule = function(when, tbl, what)
+    local arr = tbl[when]
+    if arr then
+        table.insert(arr, what)
+    else
+        tbl[when] = {what}
+    end
+
+end
+
+function LoadingDock:accept_delivery(van, delivery)
+    self:animate(.5)
+    schedule(game.tick + 60, script_data.scheduled, function()
+        self:animate(0)
+        van:continue()
+    end)
+
     self.deliveries:remove_inventory(delivery)
     local inserted = tubs.Inventory:new()
     local insert = self.entity.get_output_inventory().insert
@@ -373,6 +448,43 @@ end
 local DepotDock = {}
 local DepotDock_mt = {__index = DepotDock}
 
+function DepotDock:animate(speed)
+    if not self.anim then
+        self.anim = rendering.draw_animation{
+            animation = "tubs-nps-garage-animation",
+            surface = self.entity.surface,
+            target = self.entity,
+            x_scale = .4,
+            y_scale = .4,
+        }
+    end
+
+    if not self.lower_anim then
+        self.lower_anim = rendering.draw_animation{
+            animation = "tubs-nps-garage-lower-animation",
+            surface = self.entity.surface,
+            target = self.entity,
+            x_scale = .4,
+            y_scale = .4,
+            render_layer = "floor",
+        }
+    end
+
+    if not self.shadow_anim then
+        self.shadow_anim = rendering.draw_animation{
+            animation = "tubs-nps-garage-shadow-animation",
+            surface = self.entity.surface,
+            target = self.entity,
+            x_scale = .4,
+            y_scale = .4,
+        }
+    end
+
+    tubs.set_frame(game.tick, 0, {frames=36, speed=speed}, self.anim)
+    tubs.set_frame(game.tick, 0, {frames=36, speed=speed}, self.lower_anim)
+    tubs.set_frame(game.tick, 0, {frames=36, speed=speed}, self.shadow_anim)
+end
+
 function DepotDock:new(entity)
     local dock = setmetatable(
         {
@@ -386,6 +498,7 @@ function DepotDock:new(entity)
         DepotDock_mt)
 
     script_data.depot_docks[entity.unit_number] = dock
+    dock:animate(0)
 
     dock.warning_no_depot = rendering.draw_animation{
         animation = "tubs-nps-warning-no-depot",
@@ -668,6 +781,15 @@ local refresh_dock_gui_all = function()
 end
 
 local on_tick = function(event)
+
+    local scheduled = script_data.scheduled[event.tick]
+    if scheduled then
+        script_data.scheduled[event.tick] = nil
+        for _,func in ipairs(scheduled) do
+            func()
+        end
+    end
+
     local get_delivery_satisfaction = function(current_inventory, van, ingredients)
         local score = 0
         local proxy = van.inventory:clone()
@@ -785,8 +907,14 @@ local on_tick = function(event)
                 for _,dock in pairs(depot.docks) do
                     local van = dock.van
                     if van.state == "ready" then
-                        script_data.vans_busy[van.id] = van
-                        script_data.vans_busy[van.id].current_target = nil
+                        van.state = "loading"
+                        dock:animate(0.5)
+                        schedule(event.tick + 71, script_data.scheduled, function()
+                            van.current_target = nil
+                            dock:animate(0)
+                            van:regenerate_entity{dock.entity.position.x, dock.entity.position.y + 1}
+                            van:continue()
+                        end)
                     end
                 end
             else
@@ -794,11 +922,11 @@ local on_tick = function(event)
             end
         end
 
-        for _,van in pairs(script_data.vans_busy) do
-            if van.state == "ready" then
-                van:continue()
-            end
-        end
+        -- for _,van in pairs(script_data.vans_busy) do
+        --     if van.state == "ready" then
+        --         van:continue()
+        --     end
+        -- end
 
         refresh_dock_gui_all()
         if profiler then profiler.Stop() end
@@ -819,7 +947,6 @@ local on_ai_command_completed = function(event)
     if van.state == "working" then
         van:service_dock()
         refresh_dock_gui_all()
-        van:continue()
     elseif van.state == "go-home" then
         van.delivery_queue = {}
         van:sleep()
@@ -861,7 +988,10 @@ local on_gui_elem_changed = function(event)
   local player = game.get_player(event.player_index)
   if not (player and player.valid) then return end
 
-  local dock = script_data.dock_gui[event.player_index][event.element.index]
+  local dock_gui = script_data.dock_gui[event.player_index]
+  if not dock_gui then return end
+
+  local dock = dock_gui[event.element.index]
 
   if not dock then return end
 

@@ -18,6 +18,7 @@ van.order = "i-d"
 van.subgroup = "transport"
 van.healing_per_tick = 0.1
 van.collision_box = tubs.mkbox(.2)
+van.rotation_speed = 2
 van.selection_box = tubs.mkbox(.6)
 van.collision_mask = {"not-colliding-with-itself"}
 van.has_belt_immunity = true
@@ -80,40 +81,55 @@ end
 
 van.run_animation =
 {
-    priority = "low",
-    width = 192,
-    height = 192,
-    scale = 0.4,
-    frame_count = 5,
-    direction_count = 36,
-    shift = {0,0},
-    animation_speed = 8,
-    max_advance = 0.2,
-    stripes = {
+    layers = 
+    {
         {
-            filename = util.path("data/entities/truck_mk1_cargo-0.png"),
-            width_in_frames = 5,
-            height_in_frames = 10,
+            priority = "low",
+            width = 192,
+            height = 192,
+            scale = 0.4,
+            frame_count = 1,
+            direction_count = 36,
+            shift = {0,0},
+            animation_speed = 8,
+            max_advance = 0.2,
+            stripes = {
+                {
+                    filename = util.path("data/entities/forklift_base.png"),
+                    width_in_frames = 10,
+                    height_in_frames = 4,
+                },
+            }
         },
         {
-            filename = util.path("data/entities/truck_mk1_cargo-1.png"),
-            width_in_frames = 5,
-            height_in_frames = 10,
-        },
-        {
-            filename = util.path("data/entities/truck_mk1_cargo-2.png"),
-            width_in_frames = 5,
-            height_in_frames = 10,
-        },
-        {
-            filename = util.path("data/entities/truck_mk1_cargo-3.png"),
-            width_in_frames = 5,
-            height_in_frames = 6,
-        },
+            priority = "low",
+            width = 192,
+            height = 192,
+            scale = 0.4,
+            frame_count = 1,
+            direction_count = 36,
+            shift = {0,0},
+            animation_speed = 8,
+            max_advance = 0.2,
+            draw_as_shadow = true,
+            stripes = {
+                {
+                    filename = util.path("data/entities/forklift_shadow.png"),
+                    width_in_frames = 10,
+                    height_in_frames = 4,
+                },
+            }
+        }
     }
-
 }
 van.distance_per_frame = 4
 
+local loaded_van = util.copy(van)
+loaded_van.name = "tubs-nps-delivery-van-loaded"
+
+loaded_van.run_animation.layers[1].stripes[1].filename = util.path("data/entities/forklift_loaded.png")
+loaded_van.run_animation.layers[2].stripes[1].filename = util.path("data/entities/forklift_loaded_shadow.png")
+
 data:extend{van}
+data:extend{loaded_van}
 

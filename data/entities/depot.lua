@@ -50,6 +50,15 @@ local mkproto = function (type, name)
 
 end
 
+local blank = {
+    filename = util.path("data/entities/blank_64x64.png"),
+    size = 64,
+}
+
+local dummy = mkproto("accumulator", "tubs-nps-dummy")
+dummy.picture = blank
+dummy.minable = nil
+
 local depot = {}
 depot.type = "container"
 depot.name = "tubs-ups-depot"
@@ -61,6 +70,23 @@ depot.picture = {
     size = 256,
     scale = 0.4,
 }
+
+local dock_animation = {}
+dock_animation.type = "animation"
+dock_animation.name = "tubs-nps-dock-animation"
+dock_animation.stripes = {
+    {
+        filename = util.path("data/entities/dock_animation.png"),
+        width_in_frames = 10,
+        height_in_frames = 4,
+    },
+}
+dock_animation.size = 192
+dock_animation.run_mode = "forward"
+dock_animation.frame_count = 31
+dock_animation.animation_speed = 1
+dock_animation.repeat_count = 1
+
 depot.icon = data.raw["container"]["wooden-chest"].icon
 depot.icon_size = data.raw["container"]["wooden-chest"].icon_size
 depot.minable = { result = "tubs-ups-depot", mining_time = 1 }
@@ -72,37 +98,45 @@ loading_dock.inventory_size = 12
 loading_dock.allow_copy_paste = true
 loading_dock.additional_pastable_entities = {"assembling-machine-2"}
 loading_dock.picture = {
-    filename = util.path("data/entities/loading-dock.png"),
-    size = 256,
+    filename = util.path("data/entities/delivery_port.png"),
+    size = 192,
     scale = 0.4
 }
 loading_dock.icon = data.raw["container"]["wooden-chest"].icon
 loading_dock.icon_size = data.raw["container"]["wooden-chest"].icon_size
-loading_dock.collision_box = mkbox(1, 2, true)
-loading_dock.selection_box = mkbox(1, 2, false)
+loading_dock.collision_box = mkbox(2, 1, true)
+loading_dock.selection_box = mkbox(2, 1, false)
 
 local garage = mkproto("accumulator", "tubs-ups-depot-dock")
-garage.picture = {
-    layers = {
-        {
-            filename = util.path("data/entities/garage.png"),
-            size = 256,
-            scale = 0.4,
-        },
-        {
-            filename = util.path("data/entities/garage_shadow.png"),
-            size = 256,
-            scale = 0.4,
-            draw_as_shadow = true,
-        }
-    }
-}
+garage.picture = blank
 garage.icon = data.raw["container"]["wooden-chest"].icon
 garage.icon_size = data.raw["container"]["wooden-chest"].icon_size
 garage.collision_box = mkbox(1, 2, true)
 garage.selection_box = mkbox(1, 2, false)
 
 
+local mksimpleanim = function(name, size, frame_count, line_width, lines)
+    local anim = {}
+    anim.type = "animation"
+    anim.name = "tubs-nps-" .. name
+    anim.stripes = {
+        {
+            filename = util.path("data/entities/" .. name .. ".png"),
+            width_in_frames = line_width,
+            height_in_frames = lines,
+        },
+    }
+    anim.size = size
+    anim.frame_count = frame_count
+    anim.animation_speed = 1
+    return anim
+end
+
+local garage_anim = mksimpleanim("garage-animation", 256, 36, 8, 5)
+garage_anim.repeat_count = 1
+local garage_lower_anim = mksimpleanim("garage-lower-animation", 256, 36, 8, 5)
+local garage_shadow_anim = mksimpleanim("garage-shadow-animation", 256, 36, 8, 5)
+garage_shadow_anim.draw_as_shadow = true
 
 local garage_link_left = {
     type = "sprite",
@@ -222,3 +256,8 @@ data:extend{garage_link_right}
 data:extend{warning_no_depot}
 data:extend{depot_radar_anim}
 data:extend{depot_shadow_anim}
+data:extend{dummy}
+data:extend{dock_animation}
+data:extend{garage_anim}
+data:extend{garage_lower_anim}
+data:extend{garage_shadow_anim}

@@ -1,0 +1,258 @@
+
+forklift_base.png
+size: 2048,1024
+format: RGBA8888
+filter: Nearest,Nearest
+repeat: none
+1x1_base0000
+  rotate: false
+  xy: 0, 0
+  size: 192, 192
+  orig: 192, 192
+  offset: 0, 0
+  index: -1
+1x1_base0001
+  rotate: false
+  xy: 192, 0
+  size: 192, 192
+  orig: 192, 192
+  offset: 0, 0
+  index: -1
+1x1_base0002
+  rotate: false
+  xy: 384, 0
+  size: 192, 192
+  orig: 192, 192
+  offset: 0, 0
+  index: -1
+1x1_base0003
+  rotate: false
+  xy: 576, 0
+  size: 192, 192
+  orig: 192, 192
+  offset: 0, 0
+  index: -1
+1x1_base0004
+  rotate: false
+  xy: 768, 0
+  size: 192, 192
+  orig: 192, 192
+  offset: 0, 0
+  index: -1
+1x1_base0005
+  rotate: false
+  xy: 960, 0
+  size: 192, 192
+  orig: 192, 192
+  offset: 0, 0
+  index: -1
+1x1_base0006
+  rotate: false
+  xy: 1152, 0
+  size: 192, 192
+  orig: 192, 192
+  offset: 0, 0
+  index: -1
+1x1_base0007
+  rotate: false
+  xy: 1344, 0
+  size: 192, 192
+  orig: 192, 192
+  offset: 0, 0
+  index: -1
+1x1_base0008
+  rotate: false
+  xy: 1536, 0
+  size: 192, 192
+  orig: 192, 192
+  offset: 0, 0
+  index: -1
+1x1_base0009
+  rotate: false
+  xy: 1728, 0
+  size: 192, 192
+  orig: 192, 192
+  offset: 0, 0
+  index: -1
+1x1_base0010
+  rotate: false
+  xy: 0, 192
+  size: 192, 192
+  orig: 192, 192
+  offset: 0, 0
+  index: -1
+1x1_base0011
+  rotate: false
+  xy: 192, 192
+  size: 192, 192
+  orig: 192, 192
+  offset: 0, 0
+  index: -1
+1x1_base0012
+  rotate: false
+  xy: 384, 192
+  size: 192, 192
+  orig: 192, 192
+  offset: 0, 0
+  index: -1
+1x1_base0013
+  rotate: false
+  xy: 576, 192
+  size: 192, 192
+  orig: 192, 192
+  offset: 0, 0
+  index: -1
+1x1_base0014
+  rotate: false
+  xy: 768, 192
+  size: 192, 192
+  orig: 192, 192
+  offset: 0, 0
+  index: -1
+1x1_base0015
+  rotate: false
+  xy: 960, 192
+  size: 192, 192
+  orig: 192, 192
+  offset: 0, 0
+  index: -1
+1x1_base0016
+  rotate: false
+  xy: 1152, 192
+  size: 192, 192
+  orig: 192, 192
+  offset: 0, 0
+  index: -1
+1x1_base0017
+  rotate: false
+  xy: 1344, 192
+  size: 192, 192
+  orig: 192, 192
+  offset: 0, 0
+  index: -1
+1x1_base0018
+  rotate: false
+  xy: 1536, 192
+  size: 192, 192
+  orig: 192, 192
+  offset: 0, 0
+  index: -1
+1x1_base0019
+  rotate: false
+  xy: 1728, 192
+  size: 192, 192
+  orig: 192, 192
+  offset: 0, 0
+  index: -1
+1x1_base0020
+  rotate: false
+  xy: 0, 384
+  size: 192, 192
+  orig: 192, 192
+  offset: 0, 0
+  index: -1
+1x1_base0021
+  rotate: false
+  xy: 192, 384
+  size: 192, 192
+  orig: 192, 192
+  offset: 0, 0
+  index: -1
+1x1_base0022
+  rotate: false
+  xy: 384, 384
+  size: 192, 192
+  orig: 192, 192
+  offset: 0, 0
+  index: -1
+1x1_base0023
+  rotate: false
+  xy: 576, 384
+  size: 192, 192
+  orig: 192, 192
+  offset: 0, 0
+  index: -1
+1x1_base0024
+  rotate: false
+  xy: 768, 384
+  size: 192, 192
+  orig: 192, 192
+  offset: 0, 0
+  index: -1
+1x1_base0025
+  rotate: false
+  xy: 960, 384
+  size: 192, 192
+  orig: 192, 192
+  offset: 0, 0
+  index: -1
+1x1_base0026
+  rotate: false
+  xy: 1152, 384
+  size: 192, 192
+  orig: 192, 192
+  offset: 0, 0
+  index: -1
+1x1_base0027
+  rotate: false
+  xy: 1344, 384
+  size: 192, 192
+  orig: 192, 192
+  offset: 0, 0
+  index: -1
+1x1_base0028
+  rotate: false
+  xy: 1536, 384
+  size: 192, 192
+  orig: 192, 192
+  offset: 0, 0
+  index: -1
+1x1_base0029
+  rotate: false
+  xy: 1728, 384
+  size: 192, 192
+  orig: 192, 192
+  offset: 0, 0
+  index: -1
+1x1_base0030
+  rotate: false
+  xy: 0, 576
+  size: 192, 192
+  orig: 192, 192
+  offset: 0, 0
+  index: -1
+1x1_base0031
+  rotate: false
+  xy: 192, 576
+  size: 192, 192
+  orig: 192, 192
+  offset: 0, 0
+  index: -1
+1x1_base0032
+  rotate: false
+  xy: 384, 576
+  size: 192, 192
+  orig: 192, 192
+  offset: 0, 0
+  index: -1
+1x1_base0033
+  rotate: false
+  xy: 576, 576
+  size: 192, 192
+  orig: 192, 192
+  offset: 0, 0
+  index: -1
+1x1_base0034
+  rotate: false
+  xy: 768, 576
+  size: 192, 192
+  orig: 192, 192
+  offset: 0, 0
+  index: -1
+1x1_base0035
+  rotate: false
+  xy: 960, 576
+  size: 192, 192
+  orig: 192, 192
+  offset: 0, 0
+  index: -1
