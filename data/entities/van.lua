@@ -4,8 +4,8 @@ local sprite_base = util.copy(data.raw.car.tank)
 
 local van = {}
 van.type = "unit"
-van.name = "tubs-ups-delivery-van"
-van.localised_name = "tubs-ups-delivery-van"
+van.name = "tubs-nps-delivery-van"
+van.localised_name = "tubs-nps-delivery-van"
 van.icon = util.path("data/entities/van-icon.png")
 van.icon_size = 113
 van.icon_mipmaps = 0

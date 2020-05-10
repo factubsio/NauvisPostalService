@@ -4,6 +4,11 @@ local util = require("script/script_util")
 
 local handler = require("event_handler")
 
+local a = require("__NauvisPostalService__/script/van")
+local b = require("__NauvisPostalService__/script/van")
+print(a == b)
+
+handler.add_lib(require("__NauvisPostalService__/script/van"))
 handler.add_lib(require("script/depot_building_logic"))
 -- handler.add_lib(require("script/depot_common"))
 -- handler.add_lib(require("script/transport_drone"))

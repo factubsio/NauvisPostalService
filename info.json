@@ -7,6 +7,10 @@
     "contact": "",
     "homepage": "",
     "factorio_version": "0.18",
-    "dependencies": ["base >= 0.18"],
+    "dependencies": [
+        "base >= 0.18.22", 
+        "(?)Transport_Drones",
+        "(?)Construction_Drones"
+    ],
     "description": "Last mile logistics to work with transport drone style playthroughs"
 }

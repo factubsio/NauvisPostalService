@@ -61,61 +61,56 @@ dummy.minable = nil
 
 local depot = {}
 depot.type = "container"
-depot.name = "tubs-ups-depot"
-depot.localised_name = {"tubs-ups-depot"}
+depot.name = "tubs-nps-depot"
+depot.localised_name = {"tubs-nps-depot"}
 depot.icon_mipmaps = 0
 depot.inventory_size = 16
 depot.picture = {
-    filename = util.path("data/entities/depot.png"),
+    filename = util.path("data/entities/depot_base.png"),
     size = 256,
     scale = 0.4,
 }
-
-local dock_animation = {}
-dock_animation.type = "animation"
-dock_animation.name = "tubs-nps-dock-animation"
-dock_animation.stripes = {
-    {
-        filename = util.path("data/entities/dock_animation.png"),
-        width_in_frames = 10,
-        height_in_frames = 4,
-    },
-}
-dock_animation.size = 192
-dock_animation.run_mode = "forward"
-dock_animation.frame_count = 31
-dock_animation.animation_speed = 1
-dock_animation.repeat_count = 1
-
-depot.icon = data.raw["container"]["wooden-chest"].icon
-depot.icon_size = data.raw["container"]["wooden-chest"].icon_size
-depot.minable = { result = "tubs-ups-depot", mining_time = 1 }
+depot.icon = util.path("data/entities/depot-icon.png")
+depot.icon_size = 256
+depot.minable = { result = "tubs-nps-depot", mining_time = 1 }
 depot.collision_box = mkbox(2, 2, true)
 depot.selection_box = mkbox(2, 2, false)
 
-local loading_dock = mkproto("container", "tubs-ups-loading-dock")
+local loading_dock = mkproto("container", "tubs-nps-loading-dock")
 loading_dock.inventory_size = 12
 loading_dock.allow_copy_paste = true
 loading_dock.additional_pastable_entities = {"assembling-machine-2"}
 loading_dock.picture = {
-    filename = util.path("data/entities/delivery_port.png"),
+    filename = util.path("data/entities/dock_base.png"),
     size = 192,
     scale = 0.4
 }
-loading_dock.icon = data.raw["container"]["wooden-chest"].icon
-loading_dock.icon_size = data.raw["container"]["wooden-chest"].icon_size
+loading_dock.icon = util.path("data/entities/dock-icon.png")
+loading_dock.icon_size = 192
 loading_dock.collision_box = mkbox(2, 1, true)
 loading_dock.selection_box = mkbox(2, 1, false)
 
-local garage = mkproto("accumulator", "tubs-ups-depot-dock")
+local garage = mkproto("accumulator", "tubs-nps-garage")
 garage.picture = blank
-garage.icon = data.raw["container"]["wooden-chest"].icon
-garage.icon_size = data.raw["container"]["wooden-chest"].icon_size
+garage.icon = util.path("data/entities/garage-icon.png")
+garage.icon_size = 256
 garage.collision_box = mkbox(1, 2, true)
 garage.selection_box = mkbox(1, 2, false)
+garage.minable.result = "tubs-nps-garage-proxy"
+
+local garage_proxy = mkproto("simple-entity", "tubs-nps-garage-proxy")
+garage_proxy.picture = {
+    filename = util.path("data/entities/garage-base-proxy.png"),
+    size = 256,
+    scale = 0.4
+}
+for _,k in pairs{"icon", "icon_size", "collision_box", "selection_box"} do
+    garage_proxy[k] = garage[k]
+    garage_proxy[k] = garage[k]
+end
 
 
-local mksimpleanim = function(name, size, frame_count, line_width, lines)
+local mksimpleanim = function(name, size, frame_count, line_width, lines, shadow)
     local anim = {}
     anim.type = "animation"
     anim.name = "tubs-nps-" .. name
@@ -129,14 +124,19 @@ local mksimpleanim = function(name, size, frame_count, line_width, lines)
     anim.size = size
     anim.frame_count = frame_count
     anim.animation_speed = 1
+    anim.draw_as_shadow = shadow or false
     return anim
 end
 
-local garage_anim = mksimpleanim("garage-animation", 256, 36, 8, 5)
+local garage_anim = mksimpleanim("garage-base", 256, 36, 8, 5)
 garage_anim.repeat_count = 1
-local garage_lower_anim = mksimpleanim("garage-lower-animation", 256, 36, 8, 5)
-local garage_shadow_anim = mksimpleanim("garage-shadow-animation", 256, 36, 8, 5)
+local garage_lower_anim = mksimpleanim("garage-base-lower", 256, 36, 8, 5)
+local garage_shadow_anim = mksimpleanim("garage-shadow", 256, 36, 8, 5)
 garage_shadow_anim.draw_as_shadow = true
+
+
+local dock_base = mksimpleanim("dock_base", 192, 38, 10, 4)
+local dock_shadow = mksimpleanim("dock_shadow", 192, 38, 10, 4, true)
 
 local garage_link_left = {
     type = "sprite",
@@ -205,20 +205,20 @@ depot_shadow_anim.animation_speed = .5
 depot_shadow_anim.run_mode = "forward-then-backward"
     
 
-local mkitem = function(entity)
+local mkitem = function(entity, ingredients, proxy)
     return
     {
         {
             type = "item",
-            name = entity.name,
+            name = proxy and proxy.name or entity.name,
             localised_name = {entity.name},
             icon = entity.icon,
             icon_size = entity.icon_size,
             flags = {},
-            -- subgroup = "transport-drones",
+            subgroup = "tubs-nps",
             order = "e-a-c",
             stack_size = 10,
-            place_result = entity.name,
+            place_result = proxy and proxy.name or entity.name,
         },
         {
             type = "recipe",
@@ -227,12 +227,12 @@ local mkitem = function(entity)
             icon = entity.icon,
             icon_size = entity.icon_size,
             enabled = true,
-            ingredients =
+            ingredients = ingredients or
             {
                 {"iron-plate", 1},
             },
             energy_required = 5,
-            result = entity.name
+            result = proxy and proxy.name or entity.name
 
         }
 
@@ -246,18 +246,31 @@ fast_flying_text.name = "fast-flying-text"
 
 data:extend{fast_flying_text}
 data:extend{depot}
-data:extend(mkitem(depot))
+data:extend(mkitem(depot, {
+    {"iron-plate",  20},
+    {"stone-brick", 20},
+    {"iron-gear-wheel", 10},
+    {"electronic-circuit", 5},
+}))
+
 data:extend{loading_dock}
-data:extend(mkitem(loading_dock))
-data:extend{garage}
-data:extend(mkitem(garage))
+data:extend(mkitem(loading_dock, {
+    {"iron-plate", 10},
+    {"iron-gear-wheel", 10},
+    {"electronic-circuit", 3},
+}))
+data:extend{garage, garage_proxy}
+data:extend(mkitem(garage_proxy, {
+    {"iron-plate", 15},
+    {"iron-gear-wheel", 15}
+}))
 data:extend{garage_link_left}
 data:extend{garage_link_right}
 data:extend{warning_no_depot}
-data:extend{depot_radar_anim}
+data:extend{depot_radar_anim, depot_shadow_anim}
 data:extend{depot_shadow_anim}
 data:extend{dummy}
-data:extend{dock_animation}
+data:extend{dock_base, dock_shadow}
 data:extend{garage_anim}
 data:extend{garage_lower_anim}
 data:extend{garage_shadow_anim}
